@@ -390,6 +390,18 @@ document.getElementById("rovanFile").onchange = async(e)=>{
 
 /* -------------------- COMPARE BUTTON -------------------- */
 document.getElementById("compareBtn").onclick = ()=>{
+  const missing = detectMissingColumns(masterData, rovanData);
+
+// update UI section
+document.getElementById("missingMaster").textContent = missing.countMasterOnly;
+document.getElementById("missingRovan").textContent = missing.countRovanOnly;
+
+document.getElementById("missingMasterList").innerHTML =
+    missing.masterOnly.length ? missing.masterOnly.join("<br>") : "None";
+
+document.getElementById("missingRovanList").innerHTML =
+    missing.rovanOnly.length ? missing.rovanOnly.join("<br>") : "None";
+
   if(!masterDF || !rovanDF){
     alert("Upload both files");
     return;
@@ -439,6 +451,29 @@ document.getElementById("compareBtn").onclick = ()=>{
 
   $("#reportTable").DataTable();
 };
+
+  function detectMissingColumns(master, rovan) {
+    const masterCols = new Set(master.courses);
+    const rovanCols = new Set(rovan.courses);
+
+    const masterOnly = [];
+    const rovanOnly = [];
+
+    masterCols.forEach(c => {
+        if (!rovanCols.has(c)) masterOnly.push(c);
+    });
+
+    rovanCols.forEach(c => {
+        if (!masterCols.has(c)) rovanOnly.push(c);
+    });
+
+    return {
+        masterOnly,
+        rovanOnly,
+        countMasterOnly: masterOnly.length,
+        countRovanOnly: rovanOnly.length
+    };
+}
 
 /* -------------------- RESET -------------------- */
 document.getElementById("resetBtn").onclick = ()=>{
