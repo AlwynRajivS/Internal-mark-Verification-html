@@ -2,353 +2,337 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Internal Mark Cross Checker</title>
+<title>Internal Marks Cross Checker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+    /* ---------- Global Styles ---------- */
+    * { box-sizing: border-box; }
     body {
-        font-family: Arial, sans-serif;
-        background:#f5f7fa;
-        margin:0;
-        padding:0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f4f8;
+        margin: 0;
+        padding: 0;
+        color: #333;
     }
     header {
-        padding:20px;
-        text-align:center;
-        background:#002b5c;
-        color:white;
-        font-size:26px;
-        font-weight:bold;
+        text-align: center;
+        padding: 25px 15px;
+        background: linear-gradient(90deg,#004b99,#0066cc);
+        color: #fff;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 1px;
     }
     .container {
-        width:95%;
-        margin:auto;
-        margin-top:20px;
+        max-width: 1100px;
+        margin: 20px auto;
+        padding: 0 15px;
     }
+
+    /* ---------- Card Styles ---------- */
     .card {
-        background:white;
-        padding:20px;
-        border-radius:10px;
-        box-shadow:0 0 10px #ccc;
-        margin-bottom:20px;
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+        transition: transform 0.2s;
     }
+    .card:hover { transform: translateY(-3px); }
+
     h2 {
-        margin-top:0;
-        color:#002b5c;
+        margin-top: 0;
+        color: #004b99;
+        font-size: 24px;
     }
+
+    /* ---------- Input & Button Styles ---------- */
     input[type=file] {
-        padding:10px;
-        margin:5px 0;
-        background:#eef3ff;
-        border:1px solid #ccc;
-        border-radius:5px;
-        width:100%;
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0 15px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #eef3ff;
+        cursor: pointer;
     }
     button {
-        padding:12px 20px;
-        background:#0066cc;
-        border:none;
-        color:white;
-        border-radius:5px;
-        margin-top:10px;
-        cursor:pointer;
-        font-size:16px;
+        padding: 12px 25px;
+        background: #0066cc;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-right: 10px;
+        margin-top: 5px;
+        transition: background 0.2s;
     }
-    button:hover {
-        background:#004b99;
-    }
-    table {
-        width:100%;
-        border-collapse:collapse;
-        margin-top:20px;
-    }
-    table, th, td {
-        border:1px solid #ccc;
-    }
-    th {
-        background:#004b99;
-        color:white;
-        padding:10px;
-    }
-    td {
-        padding:8px;
-        text-align:center;
-    }
-    .match { background:#d1ffd1; }
-    .mismatch { background:#ffdddd; }
-    .missing { background:#fff3cd; }
+    button:hover { background: #004b99; }
+
+    /* ---------- Summary Styles ---------- */
     .summary-box {
-        display:flex;
-        gap:20px;
-        flex-wrap:wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
     }
     .summary-card {
-        background:white;
-        padding:15px;
-        border-radius:10px;
-        flex:1;
-        min-width:200px;
-        box-shadow:0 0 8px #ccc;
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
     }
-    .summary-card h3 { margin:0; color:#004b99; }
-    .download-links { margin-top:15px; }
+    .summary-card:hover { transform: translateY(-3px); }
+    .summary-card h3 { margin-bottom: 10px; color: #004b99; font-size: 18px; }
+    .summary-card p { font-size: 20px; font-weight: bold; margin:0; color:#222; }
+
+    /* ---------- Table Styles ---------- */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+    th, td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ccc;
+    }
+    th {
+        background: #004b99;
+        color: #fff;
+        font-weight: 500;
+    }
+
+    /* Color-coded rows with icons */
+    .match { background: #d1ffd1; }
+    .match::before { content: "✅ "; }
+    .mismatch { background: #ffdddd; }
+    .mismatch::before { content: "❌ "; }
+    .missing { background: #fff3cd; }
+    .missing::before { content: "⚠️ "; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        header { font-size: 22px; padding: 20px 10px; }
+        h2 { font-size: 20px; }
+        button { width: 100%; margin-bottom: 10px; }
+        table { font-size: 12px; }
+    }
 </style>
 </head>
-
 <body>
 
-<header>Internal Marks Cross Checker (Master vs Rovan)</header>
+<header>Internal Marks Cross Checker</header>
 
 <div class="container">
 
+    <!-- Upload Section -->
     <div class="card">
-        <h2>Upload Files</h2>
+        <h2>Upload Excel Files</h2>
         <label>Master File (Dean Office)</label>
         <input type="file" id="masterFile">
-
         <label>Rovan File</label>
         <input type="file" id="rovanFile">
-
         <button onclick="compareFiles()">Compare Files</button>
-
-        <div class="download-links">
-            <button onclick="downloadTemplate()">Download Template Format</button>
-        </div>
+        <button onclick="downloadTemplate()">Download Template</button>
     </div>
 
+    <!-- Summary Section -->
     <div id="summarySection" class="card" style="display:none;">
         <h2>Summary</h2>
-
         <div class="summary-box">
-            <div class="summary-card">
-                <h3>Total Records</h3>
-                <p id="totalRec"></p>
-            </div>
-
-            <div class="summary-card">
-                <h3>Matches</h3>
-                <p id="matchCount"></p>
-            </div>
-
-            <div class="summary-card">
-                <h3>Mismatches</h3>
-                <p id="mismatchCount"></p>
-            </div>
-
-            <div class="summary-card">
-                <h3>Missing in Master</h3>
-                <p id="missMaster"></p>
-            </div>
-
-            <div class="summary-card">
-                <h3>Missing in Rovan</h3>
-                <p id="missRovan"></p>
-            </div>
-
-            <div class="summary-card">
-                <h3>Missing Columns</h3>
-                <p id="missingColumns"></p>
-            </div>
+            <div class="summary-card"><h3>Total Records</h3><p id="totalRec"></p></div>
+            <div class="summary-card"><h3>Matches</h3><p id="matchCount"></p></div>
+            <div class="summary-card"><h3>Mismatches</h3><p id="mismatchCount"></p></div>
+            <div class="summary-card"><h3>Missing in Master</h3><p id="missMaster"></p></div>
+            <div class="summary-card"><h3>Missing in Rovan</h3><p id="missRovan"></p></div>
+            <div class="summary-card"><h3>Missing Columns</h3><p id="missingColumns"></p></div>
         </div>
     </div>
 
+    <!-- Detailed Report Section -->
     <div id="resultSection" class="card" style="display:none;">
         <h2>Detailed Comparison Report</h2>
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>Register No</th>
-                    <th>Course Code</th>
-                    <th>Master Mark</th>
-                    <th>Rovan Mark</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-
+        <div style="overflow-x:auto;">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>Register No</th>
+                        <th>Course Code</th>
+                        <th>Master Mark</th>
+                        <th>Rovan Mark</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
         <button onclick="downloadCSV()">Download CSV</button>
         <button onclick="downloadXLSX()">Download XLSX</button>
     </div>
+
 </div>
 
 <script>
-
-// ------------ TEMPLATE DOWNLOAD ---------------------
-function downloadTemplate() {
-    const template = {
-        Sheet1: [
-            ["RegNo", "MA3351", "PH3251", "CS3391", "EC2201", "EC2202"],
-            ["2123001", 18, 20, 19, 18, ""],
-            ["2123002", 15, "", 20, 25, ""]
-        ]
-    };
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(template.Sheet1);
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "Template_Format.xlsx");
-}
-
-// ------------ READ EXCEL TO MATRIX ---------------------
-function excelToMatrix(file, callback) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
-        callback(json);
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-// ------------ MAIN COMPARE FUNCTION --------------------
-function compareFiles() {
-    let masterInput = document.getElementById("masterFile").files[0];
-    let rovanInput = document.getElementById("rovanFile").files[0];
-
-    if (!masterInput || !rovanInput) {
-        alert("Please upload both Excel files.");
-        return;
+    // ---------- TEMPLATE DOWNLOAD ----------
+    function downloadTemplate() {
+        const template = {
+            Sheet1: [
+                ["RegNo", "MA3351", "PH3251", "CS3391", "EC2201", "EC2202"],
+                ["2123001", 18, 20, 19, 18, ""],
+                ["2123002", 15, "", 20, 25, ""]
+            ]
+        };
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(template.Sheet1);
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, "Template_Format.xlsx");
     }
 
-    excelToMatrix(masterInput, masterData => {
-        excelToMatrix(rovanInput, rovanData => {
-            processComparison(masterData, rovanData);
-        });
-    });
-}
+    // ---------- READ EXCEL ----------
+    function excelToMatrix(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: "array" });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+            callback(json);
+        };
+        reader.readAsArrayBuffer(file);
+    }
 
-// ------------ PROCESS COMPARISON -----------------------
-function processComparison(masterData, rovanData) {
+    // ---------- COMPARE FILES ----------
+    function compareFiles() {
+        let masterInput = document.getElementById("masterFile").files[0];
+        let rovanInput = document.getElementById("rovanFile").files[0];
 
-    let masterHeaders = masterData[0].map(h => (h || "").toString().trim());
-    let rovanHeaders = rovanData[0].map(h => (h || "").toString().trim());
-
-    let masterCols = new Set(masterHeaders.slice(1));
-    let rovanCols = new Set(rovanHeaders.slice(1));
-
-    let missingMasterOnly = [...masterCols].filter(c => !rovanCols.has(c));
-    let missingRovanOnly = [...rovanCols].filter(c => !masterCols.has(c));
-
-    document.getElementById("missingColumns").innerHTML =
-        `Master only: ${missingMasterOnly.length}<br>Rovan only: ${missingRovanOnly.length}`;
-
-    // Build map RegNo -> row object
-    function buildMap(data, headers) {
-        const map = {};
-        for (let i = 1; i < data.length; i++) {
-            const row = data[i];
-            if (!row || !row[0]) continue;
-            const reg = row[0].toString().trim();
-
-            map[reg] = {};
-            for (let c = 1; c < headers.length; c++) {
-                const code = headers[c];
-                map[reg][code] = row[c] === undefined ? "" : row[c];
-            }
+        if (!masterInput || !rovanInput) {
+            alert("Please upload both Excel files.");
+            return;
         }
-        return map;
-    }
 
-    let masterMap = buildMap(masterData, masterHeaders);
-    let rovanMap = buildMap(rovanData, rovanHeaders);
-
-    let allRegs = new Set([...Object.keys(masterMap), ...Object.keys(rovanMap)]);
-    let allCourses = new Set([...masterCols, ...rovanCols]);
-
-    let matches = 0, mismatches = 0, missingMaster = 0, missingRovan = 0;
-    let rows = [];
-
-    allRegs.forEach(reg => {
-        allCourses.forEach(course => {
-            const mVal = masterMap[reg]?.[course];
-            const rVal = rovanMap[reg]?.[course];
-
-            let status = "";
-            let mShow = mVal === undefined ? "" : mVal;
-            let rShow = rVal === undefined ? "" : rVal;
-
-            if (mVal === undefined && rVal === undefined) return;
-
-            if (mVal === undefined) {
-                status = "Missing in Master";
-                missingMaster++;
-            } else if (rVal === undefined) {
-                status = "Missing in Rovan";
-                missingRovan++;
-            } else if (mVal == rVal) {
-                status = "Match";
-                matches++;
-            } else {
-                status = "Mismatch";
-                mismatches++;
-            }
-
-            rows.push({ reg, course, m: mShow, r: rShow, status });
+        excelToMatrix(masterInput, masterData => {
+            excelToMatrix(rovanInput, rovanData => {
+                processComparison(masterData, rovanData);
+            });
         });
-    });
-
-    // ---------------- UPDATE SUMMARY -----------------
-    document.getElementById("summarySection").style.display = "block";
-    document.getElementById("resultSection").style.display = "block";
-
-    document.getElementById("totalRec").innerText = rows.length;
-    document.getElementById("matchCount").innerText = matches;
-    document.getElementById("mismatchCount").innerText = mismatches;
-    document.getElementById("missMaster").innerText = missingMaster;
-    document.getElementById("missRovan").innerText = missingRovan;
-
-    // ---------------- UPDATE TABLE -------------------
-    let tb = document.querySelector("#resultTable tbody");
-    tb.innerHTML = "";
-
-    rows.forEach(r => {
-        let tr = document.createElement("tr");
-
-        if (r.status === "Match") tr.className = "match";
-        else if (r.status === "Mismatch") tr.className = "mismatch";
-        else tr.className = "missing";
-
-        tr.innerHTML = `
-            <td>${r.reg}</td>
-            <td>${r.course}</td>
-            <td>${r.m}</td>
-            <td>${r.r}</td>
-            <td>${r.status}</td>
-        `;
-        tb.appendChild(tr);
-    });
-}
-
-// ---------------- CSV DOWNLOAD ---------------------
-function downloadCSV() {
-    let table = document.getElementById("resultTable");
-    let csv = [];
-    for (let row of table.rows) {
-        let cols = [...row.cells].map(c => `"${c.innerText}"`);
-        csv.push(cols.join(","));
     }
-    let blob = new Blob([csv.join("\n")], { type: "text/csv" });
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "Comparison_Report.csv";
-    a.click();
-}
 
-// ---------------- XLSX DOWNLOAD ---------------------
-function downloadXLSX() {
-    let table = document.getElementById("resultTable");
-    let data = [];
-    for (let row of table.rows) {
-        let cols = [...row.cells].map(c => c.innerText);
-        data.push(cols);
+    // ---------- PROCESS COMPARISON ----------
+    function processComparison(masterData, rovanData) {
+        let masterHeaders = masterData[0].map(h => (h||"").toString().trim());
+        let rovanHeaders = rovanData[0].map(h => (h||"").toString().trim());
+
+        let masterCols = new Set(masterHeaders.slice(1));
+        let rovanCols = new Set(rovanHeaders.slice(1));
+
+        let missingMasterOnly = [...masterCols].filter(c => !rovanCols.has(c));
+        let missingRovanOnly = [...rovanCols].filter(c => !masterCols.has(c));
+        document.getElementById("missingColumns").innerHTML =
+            `Master only: ${missingMasterOnly.length}<br>Rovan only: ${missingRovanOnly.length}`;
+
+        function buildMap(data, headers) {
+            const map = {};
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                const reg = row[0].toString().trim();
+                map[reg] = {};
+                for (let c = 1; c < headers.length; c++) {
+                    map[reg][headers[c]] = row[c] === undefined ? "" : row[c];
+                }
+            }
+            return map;
+        }
+
+        let masterMap = buildMap(masterData, masterHeaders);
+        let rovanMap = buildMap(rovanData, rovanHeaders);
+
+        let allRegs = new Set([...Object.keys(masterMap), ...Object.keys(rovanMap)]);
+        let allCourses = new Set([...masterCols, ...rovanCols]);
+
+        let matches=0, mismatches=0, missingMaster=0, missingRovan=0;
+        let rows=[];
+
+        allRegs.forEach(reg=>{
+            allCourses.forEach(course=>{
+                const mVal = masterMap[reg]?.[course];
+                const rVal = rovanMap[reg]?.[course];
+
+                let status="", mShow=mVal||"", rShow=rVal||"";
+
+                if (mVal===undefined && rVal===undefined) return;
+                if (mVal===undefined) { status="Missing"; missingMaster++; }
+                else if (rVal===undefined) { status="Missing"; missingRovan++; }
+                else if (mVal==rVal) { status="Match"; matches++; }
+                else { status="Mismatch"; mismatches++; }
+
+                rows.push({reg, course, m:mShow, r:rShow, status});
+            });
+        });
+
+        // -------- UPDATE SUMMARY ----------
+        document.getElementById("summarySection").style.display="block";
+        document.getElementById("resultSection").style.display="block";
+
+        document.getElementById("totalRec").innerText=rows.length;
+        document.getElementById("matchCount").innerText=matches;
+        document.getElementById("mismatchCount").innerText=mismatches;
+        document.getElementById("missMaster").innerText=missingMaster;
+        document.getElementById("missRovan").innerText=missingRovan;
+
+        // -------- UPDATE TABLE ----------
+        let tb = document.querySelector("#resultTable tbody");
+        tb.innerHTML="";
+        rows.forEach(r=>{
+            let tr=document.createElement("tr");
+            if(r.status==="Match") tr.className="match";
+            else if(r.status==="Mismatch") tr.className="mismatch";
+            else tr.className="missing";
+            tr.innerHTML=`
+                <td>${r.reg}</td>
+                <td>${r.course}</td>
+                <td>${r.m}</td>
+                <td>${r.r}</td>
+                <td>${r.status}</td>
+            `;
+            tb.appendChild(tr);
+        });
     }
-    let ws = XLSX.utils.aoa_to_sheet(data);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(wb, "Comparison_Report.xlsx");
-}
 
+    // ---------- CSV DOWNLOAD ----------
+    function downloadCSV() {
+        let table=document.getElementById("resultTable");
+        let csv=[];
+        for(let row of table.rows){
+            let cols=[...row.cells].map(c=>`"${c.innerText}"`);
+            csv.push(cols.join(","));
+        }
+        let blob=new Blob([csv.join("\n")],{type:"text/csv"});
+        let a=document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="Comparison_Report.csv";
+        a.click();
+    }
+
+    // ---------- XLSX DOWNLOAD ----------
+    function downloadXLSX() {
+        let table=document.getElementById("resultTable");
+        let data=[];
+        for(let row of table.rows){
+            let cols=[...row.cells].map(c=>c.innerText);
+            data.push(cols);
+        }
+        let ws=XLSX.utils.aoa_to_sheet(data);
+        let wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        XLSX.writeFile(wb,"Comparison_Report.xlsx");
+    }
 </script>
 
 </body>
