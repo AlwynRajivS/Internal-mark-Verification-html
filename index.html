@@ -386,107 +386,49 @@
   /************************************************
    * Compare matrices
    ************************************************/
-  function compareMatrices(master, rovan) {
+  function compareMatrices(master, rovan){
+    const regs = Array.from(new Set([...master.regs, ...rovan.regs])).sort();
+    const courses = Array.from(new Set([...master.courses, ...rovan.courses])).sort();
 
-    let mismatchCount = 0;
-    let totalCompared = 0;
-    let matches = 0;
+    const rows = [];
+    const summary = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0};
+    const perCourse = {};
+    courses.forEach(c => perCourse[c] = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0});
 
-    let mismatchTable = "";
-    mismatchTable += `<table><tr>
-        <th>RegNo</th><th>Course Code</th>
-        <th>Master Mark</th><th>Rovan Mark</th>
-    </tr>`;
-
-    // --- Extract headers ---
-    const masterHeaders = master[0].map(h => h.trim().toUpperCase());
-    const rovanHeaders = rovan[0].map(h => h.trim().toUpperCase());
-
-    // Identify index of RegNo in both files
-    const masterRegIndex = masterHeaders.indexOf("REGNO");
-    const rovanRegIndex = rovanHeaders.indexOf("REGNO");
-
-    // Course code headers (excluding RegNo)
-    const masterCourses = masterHeaders.filter(h => h !== "REGNO");
-    const rovanCourses = rovanHeaders.filter(h => h !== "REGNO");
-
-    // REBUILD COLUMN INDEX MAPS 
-    const masterColIndex = {};
-    const rovanColIndex = {};
-
-    masterHeaders.forEach((h, i) => masterColIndex[h] = i);
-    rovanHeaders.forEach((h, i) => rovanColIndex[h] = i);
-
-    // --- Missing Column Detection ---
-    const masterOnly = masterCourses.filter(c => !rovanCourses.includes(c));
-    const rovanOnly = rovanCourses.filter(c => !masterCourses.includes(c));
-
-    document.getElementById("masterOnlyCount").textContent = masterOnly.length;
-    document.getElementById("rovanOnlyCount").textContent = rovanOnly.length;
-
-    document.getElementById("masterOnlyList").textContent = masterOnly.join(", ") || "None";
-    document.getElementById("rovanOnlyList").textContent = rovanOnly.join(", ") || "None";
-
-    // Create lookup of Rovan rows by RegNo
-    const rovanMap = {};
-    for (let i = 1; i < rovan.length; i++) {
-        const reg = (rovan[i][rovanRegIndex] || "").toString().trim();
-        if (reg !== "") rovanMap[reg] = rovan[i];
-    }
-
-    // --- MAIN COMPARISON LOOP ---
-    for (let i = 1; i < master.length; i++) {
-
-        const reg = (master[i][masterRegIndex] || "").toString().trim();
-        if (reg === "") continue;
-
-        const rovanRow = rovanMap[reg];
-
-        masterCourses.forEach(course => {
-
-            const mCol = masterColIndex[course];
-            const rCol = rovanColIndex[course];
-
-            const masterMark = master[i][mCol] ?? "";
-            let rovanMark = "";
-
-            if (rovanRow && rCol !== undefined) {
-                rovanMark = rovanRow[rCol] ?? "";
-            }
-
-            // Compare only if any file has a value
-            if (masterMark !== "" || rovanMark !== "") {
-                totalCompared++;
-            }
-
-            if (masterMark == rovanMark) {
-                matches++;
-            } else {
-                mismatchCount++;
-                mismatchTable += `
-                    <tr>
-                        <td>${reg}</td>
-                        <td>${course}</td>
-                        <td>${masterMark}</td>
-                        <td>${rovanMark}</td>
-                    </tr>`;
-            }
-
-        });
-    }
-
-    mismatchTable += "</table>";
-    document.getElementById("mismatchDetails").innerHTML = mismatchTable;
-
-    // Update stats
-    document.getElementById("mismatches").textContent = mismatchCount;
-    document.getElementById("matches").textContent = matches;
-    document.getElementById("totalCells").textContent = totalCompared;
-
-    const percentage = totalCompared > 0 ? ((matches / totalCompared) * 100).toFixed(2) : 0;
-    document.getElementById("percentage").textContent = percentage;
+    regs.forEach(reg => {
+      courses.forEach(course => {
+        const mRaw = (master.matrix[reg] && master.matrix[reg][course]) ? master.matrix[reg][course] : "";
+        const rRaw = (rovan.matrix[reg] && rovan.matrix[reg][course]) ? rovan.matrix[reg][course] : "";
+        const m = normalizeString(mRaw);
+        const r = normalizeString(rRaw);
+        if(m === "" && r === "") return;
+        summary.total++; perCourse[course].total++;
+        let status = "";
+        if(m === "" && r !== "") { status = "Missing in Master"; summary.missing_master++; perCourse[course].missing_master++; }
+        else if(r === "" && m !== "") { status = "Missing in Rovan"; summary.missing_rovan++; perCourse[course].missing_rovan++; }
+        else if(m === r) { status = "Match"; summary.matches++; perCourse[course].matches++; }
+        else {
+  if (m === r) {
+    status = "Match";
+    summary.matches++;
+    perCourse[course].matches++;
+  } else {
+    status = "Mismatch";
+    summary.mismatches++;
+    perCourse[course].mismatches++;
+  }
 }
 
+
+
+        rows.push({Register:reg, Course:course, MasterMark:mRaw, RovanMark:rRaw, Status:status});
+      });
+    });
+
+    summary.matchPercent = summary.total ? Math.round((summary.matches/summary.total)*10000)/100 : 0;
+    summary.mismatchPercent = summary.total ? Math.round((summary.mismatches/summary.total)*10000)/100 : 0;
+    return {rows, summary, perCourse};
+  }
 
   /************************************************
    UI logic
