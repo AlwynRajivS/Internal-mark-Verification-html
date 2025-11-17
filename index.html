@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Marks Compare — Professional Dashboard</title>
+  <title>Marks Compare — Template C (RegNo first column)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -11,7 +11,7 @@
   <style>
     :root{
       --brand:#0b63ff;
-      --bg:#f3f6fb;
+      --bg:#f7fbff;
       --muted:#6b7280;
       --card:#ffffff;
       --success:#1aa06a;
@@ -19,11 +19,11 @@
       --warn:#f59e0b;
       --info:#0ea5e9;
     }
-    body { background:var(--bg); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#06314a; }
+    body { background:var(--bg); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; color:#06314a; }
     .container{max-width:1200px}
-    header{margin:20px 0}
-    .brand { font-weight:700; font-size:1.35rem; color:var(--brand); }
-    .card-block { background:var(--card); border-radius:12px; padding:18px; box-shadow:0 6px 18px rgba(10,25,47,0.06); }
+    header{margin:18px 0}
+    .brand { font-weight:700; font-size:1.25rem; color:var(--brand); }
+    .card-block { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 8px 20px rgba(12,30,60,0.06); }
     .stat .value { font-weight:700; font-size:1.4rem; }
     .small-muted { color:var(--muted); font-size:0.9rem; }
     .status-Match{ background:rgba(26,160,106,0.06) !important; }
@@ -31,63 +31,74 @@
     .status-MissingMaster{ background:rgba(245,158,11,0.06) !important; }
     .status-MissingRovan{ background:rgba(14,165,233,0.06) !important; }
     .top-actions .btn { margin-right:8px; }
-    .template-hint { font-size:0.87rem; color:var(--muted); margin-top:6px; }
     .file-label { font-weight:600; color:#0b2340; }
-    footer { margin-top:28px; color:var(--muted); font-size:0.85rem; text-align:center; }
-    @media (max-width:768px){
-      .card-block { padding:12px; }
-    }
+    .hint { font-size:0.86rem; color:var(--muted); }
+    footer { margin-top:20px; color:var(--muted); font-size:0.85rem; text-align:center; }
+    .select-reg { max-width:320px; }
+    @media (max-width:768px){ .card-block { padding:12px; } }
   </style>
 </head>
 <body>
   <div class="container py-4">
     <header class="d-flex justify-content-between align-items-start">
       <div>
-        <div class="brand">Marks Compare</div>
-        <div class="small-muted">Professional Dashboard — Client-side Excel comparison (Master vs Rovan)</div>
+        <div class="brand">Marks Compare — Template C</div>
+        <div class="small-muted">First column = RegNo, other columns = course codes (order may differ)</div>
       </div>
-      <div class="text-end">
-        <div class="small-muted">Files processed only in your browser</div>
-        <div class="small-muted">Ready to host on GitHub Pages</div>
+      <div class="text-end small-muted">
+        Client-side only • Ready for GitHub Pages
       </div>
     </header>
 
     <!-- Upload area -->
     <section class="card-block mb-4">
       <div class="row g-3 align-items-center">
-        <div class="col-lg-8">
+        <div class="col-lg-7">
           <div class="row g-2">
             <div class="col-md-6">
               <label class="file-label">Master File (Dean Office)</label>
               <input id="masterFile" class="form-control" type="file" accept=".xlsx,.xls,.csv" />
-              <div class="template-hint">First column should contain Register No OR upload transposed file; auto-detection available.</div>
+              <div class="hint">Upload Master Excel. App will try to detect RegNo column automatically.</div>
             </div>
             <div class="col-md-6">
               <label class="file-label">Rovan File</label>
               <input id="rovanFile" class="form-control" type="file" accept=".xlsx,.xls,.csv" />
-              <div class="template-hint">Course columns and register rows may be in different order — the tool handles it.</div>
+              <div class="hint">Upload Rovan Excel.</div>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <label class="file-label">Detected RegNo Column (Master)</label>
+              <select id="masterRegCol" class="form-select select-reg"><option value="">— upload file to detect —</option></select>
+              <div class="hint">If detected column is wrong, choose the correct column from this dropdown.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="file-label">Detected RegNo Column (Rovan)</label>
+              <select id="rovanRegCol" class="form-select select-reg"><option value="">— upload file to detect —</option></select>
             </div>
           </div>
         </div>
 
-        <div class="col-lg-4 text-lg-end">
-          <div class="top-actions mb-2">
+        <div class="col-lg-5 text-lg-end">
+          <div class="top-actions">
             <button id="compareBtn" class="btn btn-primary">Compare Now</button>
             <button id="resetBtn" class="btn btn-outline-secondary">Reset</button>
           </div>
 
-          <div class="mt-2">
+          <div class="mt-3">
             <button id="downloadMasterTpl" class="btn btn-sm btn-outline-primary">Download Master Template</button>
             <button id="downloadRovanTpl" class="btn btn-sm btn-outline-primary">Download Rovan Template</button>
           </div>
 
-          <div class="mt-2 small-muted">
-            Orientation: <strong id="autoDetectText">Auto-detect</strong>
+          <div class="mt-2 hint">
+            Orientation detection: <strong id="orientInfo">Auto</strong>
             <div class="form-check form-switch mt-1">
               <input class="form-check-input" type="checkbox" id="forceTransposed">
-              <label class="form-check-label small-muted" for="forceTransposed">Force: Registers are columns (transposed)</label>
+              <label class="form-check-label small-muted" for="forceTransposed">Force: RegNo are columns (transposed)</label>
             </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -161,7 +172,7 @@
           <tbody></tbody>
         </table>
       </div>
-      <div class="mt-3 small-muted">Tip: Use search box to find a register or course quickly. </div>
+      <div class="mt-3 small-muted">Tip: Use the search box to find a register or course quickly.</div>
     </section>
 
     <footer>Built with SheetJS • Chart.js • DataTables • Client-side only (safe & private)</footer>
@@ -174,7 +185,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <script>
-  /* ---------------------- Utilities ---------------------- */
+  /*******************************
+   * Utilities
+   *******************************/
   const readFileAsArrayBuffer = (file) => new Promise((res, rej) => {
     const fr = new FileReader();
     fr.onload = e => res(e.target.result);
@@ -207,7 +220,9 @@
     return [h, ...lines].join("\r\n");
   }
 
-  /* ---------------------- Templates ---------------------- */
+  /*******************************
+   * Template Download
+   *******************************/
   document.getElementById('downloadMasterTpl').onclick = () => {
     const arr = [
       ["RegNo","MA3351","PH3251","CS3391"],
@@ -236,17 +251,16 @@
     downloadBlob(wbout, "Rovan_Template.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   };
 
-  /* ---------------------- Parsing ---------------------- */
+  /*******************************
+   * Parsing helpers
+   *******************************/
   async function parseSheetToArray(file){
     const ab = await readFileAsArrayBuffer(file);
     const wb = XLSX.read(ab, {type:'array'});
-    const name = wb.SheetNames[0];
-    const ws = wb.Sheets[name];
-    // header:1 returns array-of-arrays; defval keeps blanks as ""
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
     const arr = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
-    // trim trailing empty rows
     while(arr.length && arr[arr.length-1].every(c => c === "")) arr.pop();
-    // find last non-empty column
     const cols = arr[0] ? arr[0].length : 0;
     const colHas = new Array(cols).fill(false);
     arr.forEach(row => row.forEach((v,i) => { if(v !== "" && v !== null && v !== undefined) colHas[i] = true; }));
@@ -266,38 +280,60 @@
     return {header, rows};
   }
 
+  function detectRegColCandidates(df){
+    // returns list of header names that are candidate RegNo columns (based on name or content)
+    const candidates = new Set();
+    // header name match
+    df.header.forEach(h => {
+      if(!h) return;
+      const x = String(h).toUpperCase();
+      if(['REG','REGNO','REGISTER NO','REGISTER_NO','REGISTERNO','ROLL','ROLLNO','ROLL_NO','STUDENT ID','USN'].some(k => x.includes(k))) {
+        candidates.add(h);
+      }
+    });
+    // content heuristic: column with many register-like values
+    df.header.forEach(h => {
+      const vals = df.rows.map(r => normalizeString(r[h]));
+      const regCount = vals.filter(v => isRegisterLike(v)).length;
+      if(regCount >= Math.max(3, Math.floor(0.35*vals.length))) candidates.add(h);
+    });
+    // fallback: first column
+    if(candidates.size === 0 && df.header.length>0) candidates.add(df.header[0]);
+    return Array.from(candidates);
+  }
+
   function detectOrientation(df){
-    // returns 'rows' (Reg in first column) or 'columns' (Reg in header)
-    // if user forces transposed, honor it elsewhere
+    // if first column contains many register-like -> 'rows' (RegNo in first col)
     const firstColVals = df.rows.map(r => normalizeString(r[df.header[0]]));
     const colCount = firstColVals.length;
     const regsInCol = firstColVals.filter(v => isRegisterLike(v)).length;
     if(regsInCol >= Math.max(3, Math.floor(0.35*colCount))) return 'rows';
-    // check header for register-like entries
     const headerRegs = df.header.filter(h => isRegisterLike(h)).length;
     if(headerRegs >= Math.max(3, Math.floor(0.35*df.header.length))) return 'columns';
-    // fallback: rows
     return 'rows';
   }
 
-  function dfToMatrix(df, orientation){
+  function dfToMatrix(df, regColName, orientation){
+    // Template C expects first column RegNo, but we support any regColName chosen
     const regs = new Set(), courses = new Set();
-    const matrix = {}; // matrix[reg][course] = value
+    const matrix = {};
     if(orientation === 'rows'){
-      const regCol = df.header[0];
+      const regCol = regColName || df.header[0];
       df.rows.forEach(r => {
         const reg = normalizeString(r[regCol]);
         if(!reg) return;
         regs.add(reg);
         matrix[reg] = matrix[reg] || {};
-        for(let i=1;i<df.header.length;i++){
-          const course = normalizeString(df.header[i]);
-          if(!course) continue;
+        df.header.forEach(h => {
+          if(h === regCol) return;
+          const course = normalizeString(h);
+          if(!course) return;
           courses.add(course);
-          matrix[reg][course] = r[df.header[i]] === null ? "" : String(r[df.header[i]]).trim();
-        }
+          matrix[reg][course] = r[h] === null ? "" : String(r[h]).trim();
+        });
       });
     } else {
+      // transposed: header row contains regs; first column contains course names
       const regHeaders = df.header.slice(1).map(h => normalizeString(h));
       df.rows.forEach(r => {
         const course = normalizeString(r[df.header[0]]);
@@ -341,10 +377,54 @@
     return {rows, summary, perCourse};
   }
 
-  /* ---------------------- UI Rendering ---------------------- */
+  /*******************************
+   * UI & Events
+   *******************************/
+  let masterDF = null, rovanDF = null;
   let lastResult = null;
   let dataTable = null;
   let courseChart = null;
+
+  function fillRegColSelect(df, selectEl){
+    selectEl.innerHTML = '';
+    const header = df.header;
+    const candidates = detectRegColCandidates(df);
+    // add all headers as options, mark candidates first
+    const ordered = [...new Set([...candidates, ...header])];
+    ordered.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h; opt.textContent = h || '(blank)';
+      selectEl.appendChild(opt);
+    });
+    // set default to first candidate if present
+    if(candidates.length>0) selectEl.value = candidates[0];
+  }
+
+  document.getElementById('masterFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    try {
+      const arr = await parseSheetToArray(f);
+      masterDF = arrayToDF(arr);
+      fillRegColSelect(masterDF, document.getElementById('masterRegCol'));
+    } catch(err){
+      alert('Cannot read Master file. Ensure it is a valid .xlsx/.xls/.csv file.');
+      console.error(err);
+    }
+  });
+
+  document.getElementById('rovanFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    try {
+      const arr = await parseSheetToArray(f);
+      rovanDF = arrayToDF(arr);
+      fillRegColSelect(rovanDF, document.getElementById('rovanRegCol'));
+    } catch(err){
+      alert('Cannot read Rovan file. Ensure it is a valid .xlsx/.xls/.csv file.');
+      console.error(err);
+    }
+  });
 
   function renderStats(summary){
     document.getElementById('totalCells').textContent = summary.total || 0;
@@ -382,7 +462,7 @@
     if(courseChart) courseChart.destroy();
     courseChart = new Chart(ctx, {
       type:'bar',
-      data:{ labels, datasets:[{label:'Mismatch %', data, backgroundColor:'rgba(11,99,255,0.7)'}] },
+      data:{ labels, datasets:[{label:'Mismatch %', data, backgroundColor:'rgba(11,99,255,0.8)'}] },
       options:{ responsive:true, scales:{y:{beginAtZero:true, max:100}} }
     });
   }
@@ -407,44 +487,43 @@
     dataTable = $('#reportTable').DataTable({ pageLength:25, lengthMenu:[10,25,50,100] });
   }
 
-  /* ---------------------- Events ---------------------- */
   document.getElementById('compareBtn').onclick = async () => {
-    const masterFile = document.getElementById('masterFile').files[0];
-    const rovanFile = document.getElementById('rovanFile').files[0];
-    if(!masterFile || !rovanFile){ alert('Please select both Master and Rovan files.'); return; }
+    if(!masterDF || !rovanDF){
+      alert('Please upload both Master and Rovan files (then choose RegNo columns if needed).');
+      return;
+    }
     try {
-      // parse
-      const [mArr, rArr] = await Promise.all([parseSheetToArray(masterFile), parseSheetToArray(rovanFile)]);
-      const mDF = arrayToDF(mArr), rDF = arrayToDF(rArr);
-
-      // detect orientation but allow force switch
       const forced = document.getElementById('forceTransposed').checked;
-      let mOrient = forced ? 'columns' : detectOrientation(mDF);
-      let rOrient = forced ? 'columns' : detectOrientation(rDF);
-      document.getElementById('autoDetectText').textContent = `Master:${mOrient.toUpperCase()} • Rovan:${rOrient.toUpperCase()}`;
+      let mOrient = forced ? 'columns' : detectOrientation(masterDF);
+      let rOrient = forced ? 'columns' : detectOrientation(rovanDF);
+      document.getElementById('orientInfo').textContent = `Master:${mOrient.toUpperCase()} • Rovan:${rOrient.toUpperCase()}`;
 
-      const mMatrix = dfToMatrix(mDF, mOrient);
-      const rMatrix = dfToMatrix(rDF, rOrient);
+      const masterRegCol = document.getElementById('masterRegCol').value || masterDF.header[0];
+      const rovanRegCol = document.getElementById('rovanRegCol').value || rovanDF.header[0];
+
+      const mMatrix = dfToMatrix(masterDF, masterRegCol, mOrient);
+      const rMatrix = dfToMatrix(rovanDF, rovanRegCol, rOrient);
 
       const result = compareMatrices(mMatrix, rMatrix);
-      lastResult = { result, mMatrix, rMatrix, mOrient, rOrient };
+      lastResult = { result, mMatrix, rMatrix, mOrient, rOrient, masterRegCol, rovanRegCol };
 
       renderStats(result.summary);
       renderCourseList(result.perCourse);
       renderChart(result.perCourse);
       populateTable(result.rows);
-
-      // scroll to results
       document.querySelector('#reportTable').scrollIntoView({behavior:'smooth'});
     } catch(err){
       console.error(err);
-      alert('Error reading files. Please verify the Excel files are valid (.xlsx/.xls/.csv).');
+      alert('Error processing files. See console for details.');
     }
   };
 
   document.getElementById('resetBtn').onclick = () => {
     document.getElementById('masterFile').value = '';
     document.getElementById('rovanFile').value = '';
+    document.getElementById('masterRegCol').innerHTML = '<option value="">— upload file to detect —</option>';
+    document.getElementById('rovanRegCol').innerHTML = '<option value="">— upload file to detect —</option>';
+    document.getElementById('forceTransposed').checked = false;
     if($.fn.dataTable.isDataTable('#reportTable')) $('#reportTable').DataTable().clear().destroy();
     document.querySelector('#reportTable tbody').innerHTML = '';
     if(courseChart) courseChart.destroy();
@@ -455,8 +534,7 @@
     document.getElementById('matchPercent').textContent = '0%';
     document.getElementById('mismatchPercent').textContent = '0%';
     document.getElementById('missingCounts').textContent = '0 / 0';
-    document.getElementById('autoDetectText').textContent = 'Auto-detect';
-    document.getElementById('forceTransposed').checked = false;
+    document.getElementById('orientInfo').textContent = 'Auto';
   };
 
   document.getElementById('downloadCSV').onclick = () => {
@@ -473,6 +551,7 @@
     const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     downloadBlob(wbout, 'compare_report.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
+
   </script>
 </body>
 </html>
