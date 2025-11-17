@@ -1,0 +1,28 @@
+
+:root{
+  --brand:#0d6efd;
+  --muted:#6c757d;
+  --success:#1aa06a;
+  --danger:#e03a3a;
+  --warning:#f0ad4e;
+  --info:#17a2b8;
+  --bg:#f7f9fc;
+}
+body{background:var(--bg);font-family:Inter,system-ui,Arial,Helvetica,sans-serif}
+.card-contrast{background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(18,38,63,0.06)}
+.brand{font-weight:700;color:var(--brand);letter-spacing:0.2px;font-size:1.4rem}
+.tagline{color:var(--muted);font-size:0.9rem}
+.stat-card .value{font-size:1.6rem;font-weight:700}
+.status-Match{background:rgba(26,160,106,0.08)}
+.status-Mismatch{background:rgba(224,58,58,0.06)}
+.status-MissingMaster{background:rgba(240,173,78,0.06)}
+.status-MissingRovan{background:rgba(23,162,184,0.06)}
+table.dataTable tbody td{vertical-align:middle}
+.small-muted{font-size:0.85rem;color:var(--muted)}
+.top-actions .btn{margin-right:8px}
+.template-list small{display:block;color:var(--muted)}
+.footer-note{font-size:0.85rem;color:#6b7280}
+.upload-card .form-control {height:48px}
+@media (max-width: 900px){
+  .stat-card .value{font-size:1.2rem}
+}
