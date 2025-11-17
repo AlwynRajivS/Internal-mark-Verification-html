@@ -4,82 +4,119 @@
   <meta charset="utf-8" />
   <title>Marks Compare — Professional Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- DataTables -->
   <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet"/>
-  <link href="styles.css" rel="stylesheet"/>
+  <style>
+    :root{
+      --brand:#0b63ff;
+      --bg:#f3f6fb;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --success:#1aa06a;
+      --danger:#e03a3a;
+      --warn:#f59e0b;
+      --info:#0ea5e9;
+    }
+    body { background:var(--bg); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#06314a; }
+    .container{max-width:1200px}
+    header{margin:20px 0}
+    .brand { font-weight:700; font-size:1.35rem; color:var(--brand); }
+    .card-block { background:var(--card); border-radius:12px; padding:18px; box-shadow:0 6px 18px rgba(10,25,47,0.06); }
+    .stat .value { font-weight:700; font-size:1.4rem; }
+    .small-muted { color:var(--muted); font-size:0.9rem; }
+    .status-Match{ background:rgba(26,160,106,0.06) !important; }
+    .status-Mismatch{ background:rgba(224,58,58,0.06) !important; }
+    .status-MissingMaster{ background:rgba(245,158,11,0.06) !important; }
+    .status-MissingRovan{ background:rgba(14,165,233,0.06) !important; }
+    .top-actions .btn { margin-right:8px; }
+    .template-hint { font-size:0.87rem; color:var(--muted); margin-top:6px; }
+    .file-label { font-weight:600; color:#0b2340; }
+    footer { margin-top:28px; color:var(--muted); font-size:0.85rem; text-align:center; }
+    @media (max-width:768px){
+      .card-block { padding:12px; }
+    }
+  </style>
 </head>
 <body>
   <div class="container py-4">
-    <header class="d-flex justify-content-between align-items-center mb-4">
+    <header class="d-flex justify-content-between align-items-start">
       <div>
         <div class="brand">Marks Compare</div>
-        <div class="tagline">Professional Dashboard — Client-side Excel comparison</div>
+        <div class="small-muted">Professional Dashboard — Client-side Excel comparison (Master vs Rovan)</div>
       </div>
-      <div class="text-end small-muted">
-        <div>Client-side processing • Files never leave your browser</div>
-        <div class="mt-1"><a href="#" id="helpBtn">How to use</a></div>
+      <div class="text-end">
+        <div class="small-muted">Files processed only in your browser</div>
+        <div class="small-muted">Ready to host on GitHub Pages</div>
       </div>
     </header>
 
-    <section class="upload-card card-contrast p-3 mb-4">
-      <div class="row align-items-center">
+    <!-- Upload area -->
+    <section class="card-block mb-4">
+      <div class="row g-3 align-items-center">
         <div class="col-lg-8">
-          <div class="row gy-2">
+          <div class="row g-2">
             <div class="col-md-6">
-              <label class="form-label">Master File (Dean Office)</label>
-              <input id="masterFile" type="file" accept=".xlsx,.xls,.csv" class="form-control"/>
+              <label class="file-label">Master File (Dean Office)</label>
+              <input id="masterFile" class="form-control" type="file" accept=".xlsx,.xls,.csv" />
+              <div class="template-hint">First column should contain Register No OR upload transposed file; auto-detection available.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Rovan File</label>
-              <input id="rovanFile" type="file" accept=".xlsx,.xls,.csv" class="form-control"/>
+              <label class="file-label">Rovan File</label>
+              <input id="rovanFile" class="form-control" type="file" accept=".xlsx,.xls,.csv" />
+              <div class="template-hint">Course columns and register rows may be in different order — the tool handles it.</div>
             </div>
-          </div>
-          <div class="mt-2 small-muted">
-            Tip: First column usually should be <code>RegNo</code>. App auto-detects orientation.
           </div>
         </div>
 
-        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-          <div class="top-actions">
-            <button id="compareBtn" class="btn btn-primary btn-lg">Compare Now</button>
-            <button id="resetBtn" class="btn btn-outline-secondary btn-lg">Reset</button>
+        <div class="col-lg-4 text-lg-end">
+          <div class="top-actions mb-2">
+            <button id="compareBtn" class="btn btn-primary">Compare Now</button>
+            <button id="resetBtn" class="btn btn-outline-secondary">Reset</button>
           </div>
-          <div class="mt-3 template-list text-start text-lg-end">
-            <div class="mt-1">
-              <button id="downloadMasterTpl" class="btn btn-sm btn-outline-primary">Download Master Template</button>
-              <button id="downloadRovanTpl" class="btn btn-sm btn-outline-primary">Download Rovan Template</button>
+
+          <div class="mt-2">
+            <button id="downloadMasterTpl" class="btn btn-sm btn-outline-primary">Download Master Template</button>
+            <button id="downloadRovanTpl" class="btn btn-sm btn-outline-primary">Download Rovan Template</button>
+          </div>
+
+          <div class="mt-2 small-muted">
+            Orientation: <strong id="autoDetectText">Auto-detect</strong>
+            <div class="form-check form-switch mt-1">
+              <input class="form-check-input" type="checkbox" id="forceTransposed">
+              <label class="form-check-label small-muted" for="forceTransposed">Force: Registers are columns (transposed)</label>
             </div>
-            <div class="mt-2 small-muted">Download templates to avoid format errors.</div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- Stats -->
     <section class="row g-3 mb-4">
-      <div class="col-md-3">
-        <div class="card-contrast p-3 stat-card">
-          <div class="small-muted">Total compared cells</div>
+      <div class="col-sm-6 col-md-3">
+        <div class="card-block stat">
+          <div class="small-muted">Total Compared Cells</div>
           <div class="value" id="totalCells">0</div>
-          <div class="small-muted">Non-empty cells compared</div>
+          <div class="small-muted">Non-empty marks compared</div>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="card-contrast p-3 stat-card">
+      <div class="col-sm-6 col-md-3">
+        <div class="card-block stat">
           <div class="small-muted">Matches</div>
           <div class="value text-success" id="matches">0</div>
           <div class="small-muted" id="matchPercent">0%</div>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="card-contrast p-3 stat-card">
+      <div class="col-sm-6 col-md-3">
+        <div class="card-block stat">
           <div class="small-muted">Mismatches</div>
           <div class="value text-danger" id="mismatches">0</div>
           <div class="small-muted" id="mismatchPercent">0%</div>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="card-contrast p-3 stat-card">
+      <div class="col-sm-6 col-md-3">
+        <div class="card-block stat">
           <div class="small-muted">Missing (Master / Rovan)</div>
           <div class="value" id="missingCounts">0 / 0</div>
           <div class="small-muted">Cells missing in files</div>
@@ -87,24 +124,26 @@
       </div>
     </section>
 
-    <section class="card-contrast p-3 mb-4">
+    <!-- Chart + Course list -->
+    <section class="card-block mb-4">
       <div class="row align-items-center">
-        <div class="col-lg-8">
+        <div class="col-lg-8 mb-3 mb-lg-0">
           <canvas id="courseChart" height="120"></canvas>
         </div>
         <div class="col-lg-4">
-          <h6 class="mb-2">Course Summary</h6>
-          <div id="courseSummary" style="max-height:220px;overflow:auto"></div>
+          <h6 class="mb-2">Course Summary (top issues)</h6>
+          <div id="courseSummary" style="max-height:220px; overflow:auto;"></div>
         </div>
       </div>
     </section>
 
-    <section class="card-contrast p-3">
+    <!-- Table -->
+    <section class="card-block mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0">Detailed Report</h5>
         <div>
-          <button id="downloadCSV" class="btn btn-sm btn-outline-success">Download CSV</button>
-          <button id="downloadXlsx" class="btn btn-sm btn-outline-primary">Download XLSX</button>
+          <button id="downloadCSV" class="btn btn-sm btn-success">Download CSV</button>
+          <button id="downloadXlsx" class="btn btn-sm btn-primary">Download XLSX</button>
         </div>
       </div>
 
@@ -122,18 +161,318 @@
           <tbody></tbody>
         </table>
       </div>
-      <div class="mt-3 footer-note">
-        Use the search box to quickly find a Register No or Course code.
-      </div>
+      <div class="mt-3 small-muted">Tip: Use search box to find a register or course quickly. </div>
     </section>
 
-    <footer class="text-center mt-4 small-muted">Built with SheetJS & Chart.js • Ready for GitHub Pages</footer>
+    <footer>Built with SheetJS • Chart.js • DataTables • Client-side only (safe & private)</footer>
   </div>
 
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="script.js"></script>
+
+  <script>
+  /* ---------------------- Utilities ---------------------- */
+  const readFileAsArrayBuffer = (file) => new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = e => res(e.target.result);
+    fr.onerror = e => rej(e);
+    fr.readAsArrayBuffer(file);
+  });
+
+  function downloadBlob(data, filename, mime){
+    const blob = new Blob([data], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function normalizeString(v){
+    if(v === null || v === undefined) return "";
+    return String(v).trim().toUpperCase();
+  }
+  function isRegisterLike(s){
+    if(!s) return false;
+    return /\d/.test(s) && s.trim().length >= 3;
+  }
+
+  function objectToCSV(rows, cols){
+    const esc = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
+    const h = cols.map(esc).join(",");
+    const lines = rows.map(r => cols.map(c => esc(r[c])).join(","));
+    return [h, ...lines].join("\r\n");
+  }
+
+  /* ---------------------- Templates ---------------------- */
+  document.getElementById('downloadMasterTpl').onclick = () => {
+    const arr = [
+      ["RegNo","MA3351","PH3251","CS3391"],
+      ["2123001",18,20,19],
+      ["2123002",15,18,20],
+      ["2123003",20,17,18]
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(arr);
+    XLSX.utils.book_append_sheet(wb, ws, "Master");
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    downloadBlob(wbout, "Master_Template.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  };
+
+  document.getElementById('downloadRovanTpl').onclick = () => {
+    const arr = [
+      ["RegNo","CS3391","MA3351","PH3251"],
+      ["2123001",19,18,20],
+      ["2123002",20,15,18],
+      ["2123003",18,20,17]
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(arr);
+    XLSX.utils.book_append_sheet(wb, ws, "Rovan");
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    downloadBlob(wbout, "Rovan_Template.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  };
+
+  /* ---------------------- Parsing ---------------------- */
+  async function parseSheetToArray(file){
+    const ab = await readFileAsArrayBuffer(file);
+    const wb = XLSX.read(ab, {type:'array'});
+    const name = wb.SheetNames[0];
+    const ws = wb.Sheets[name];
+    // header:1 returns array-of-arrays; defval keeps blanks as ""
+    const arr = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+    // trim trailing empty rows
+    while(arr.length && arr[arr.length-1].every(c => c === "")) arr.pop();
+    // find last non-empty column
+    const cols = arr[0] ? arr[0].length : 0;
+    const colHas = new Array(cols).fill(false);
+    arr.forEach(row => row.forEach((v,i) => { if(v !== "" && v !== null && v !== undefined) colHas[i] = true; }));
+    const lastCol = colHas.lastIndexOf(true) + 1 || cols;
+    const cleaned = arr.map(r => r.slice(0, lastCol));
+    return cleaned;
+  }
+
+  function arrayToDF(arr){
+    if(!arr || arr.length === 0) return {header:[], rows:[]};
+    const header = arr[0].map(h => h === null ? "" : String(h));
+    const rows = arr.slice(1).map(r => {
+      const obj = {};
+      for(let i=0;i<header.length;i++) obj[header[i] ?? `COL${i}`] = r[i] ?? "";
+      return obj;
+    });
+    return {header, rows};
+  }
+
+  function detectOrientation(df){
+    // returns 'rows' (Reg in first column) or 'columns' (Reg in header)
+    // if user forces transposed, honor it elsewhere
+    const firstColVals = df.rows.map(r => normalizeString(r[df.header[0]]));
+    const colCount = firstColVals.length;
+    const regsInCol = firstColVals.filter(v => isRegisterLike(v)).length;
+    if(regsInCol >= Math.max(3, Math.floor(0.35*colCount))) return 'rows';
+    // check header for register-like entries
+    const headerRegs = df.header.filter(h => isRegisterLike(h)).length;
+    if(headerRegs >= Math.max(3, Math.floor(0.35*df.header.length))) return 'columns';
+    // fallback: rows
+    return 'rows';
+  }
+
+  function dfToMatrix(df, orientation){
+    const regs = new Set(), courses = new Set();
+    const matrix = {}; // matrix[reg][course] = value
+    if(orientation === 'rows'){
+      const regCol = df.header[0];
+      df.rows.forEach(r => {
+        const reg = normalizeString(r[regCol]);
+        if(!reg) return;
+        regs.add(reg);
+        matrix[reg] = matrix[reg] || {};
+        for(let i=1;i<df.header.length;i++){
+          const course = normalizeString(df.header[i]);
+          if(!course) continue;
+          courses.add(course);
+          matrix[reg][course] = r[df.header[i]] === null ? "" : String(r[df.header[i]]).trim();
+        }
+      });
+    } else {
+      const regHeaders = df.header.slice(1).map(h => normalizeString(h));
+      df.rows.forEach(r => {
+        const course = normalizeString(r[df.header[0]]);
+        if(!course) return;
+        courses.add(course);
+        for(let i=1;i<df.header.length;i++){
+          const reg = regHeaders[i-1];
+          if(!reg) continue;
+          regs.add(reg);
+          matrix[reg] = matrix[reg] || {};
+          matrix[reg][course] = r[df.header[i]] === null ? "" : String(r[df.header[i]]).trim();
+        }
+      });
+    }
+    return {regs:Array.from(regs).sort(), courses:Array.from(courses).sort(), matrix};
+  }
+
+  function compareMatrices(master, rovan){
+    const regs = Array.from(new Set([...master.regs, ...rovan.regs])).sort();
+    const courses = Array.from(new Set([...master.courses, ...rovan.courses])).sort();
+    const rows = [];
+    const summary = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0};
+    const perCourse = {};
+    courses.forEach(c => perCourse[c] = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0});
+    regs.forEach(reg => {
+      courses.forEach(course => {
+        const m = (master.matrix[reg] && master.matrix[reg][course]) ? normalizeString(master.matrix[reg][course]) : "";
+        const r = (rovan.matrix[reg] && rovan.matrix[reg][course]) ? normalizeString(rovan.matrix[reg][course]) : "";
+        if(m === "" && r === "") return;
+        summary.total++; perCourse[course].total++;
+        let status = "";
+        if(m === "" && r !== "") { status = "Missing in Master"; summary.missing_master++; perCourse[course].missing_master++; }
+        else if(r === "" && m !== "") { status = "Missing in Rovan"; summary.missing_rovan++; perCourse[course].missing_rovan++; }
+        else if(m === r) { status = "Match"; summary.matches++; perCourse[course].matches++; }
+        else { status = "Mismatch"; summary.mismatches++; perCourse[course].mismatches++; }
+        rows.push({Register:reg, Course:course, MasterMark:m, RovanMark:r, Status:status});
+      });
+    });
+    summary.matchPercent = summary.total ? Math.round((summary.matches/summary.total)*10000)/100 : 0;
+    summary.mismatchPercent = summary.total ? Math.round((summary.mismatches/summary.total)*10000)/100 : 0;
+    return {rows, summary, perCourse};
+  }
+
+  /* ---------------------- UI Rendering ---------------------- */
+  let lastResult = null;
+  let dataTable = null;
+  let courseChart = null;
+
+  function renderStats(summary){
+    document.getElementById('totalCells').textContent = summary.total || 0;
+    document.getElementById('matches').textContent = summary.matches || 0;
+    document.getElementById('mismatches').textContent = summary.mismatches || 0;
+    document.getElementById('matchPercent').textContent = `${summary.matchPercent || 0}%`;
+    document.getElementById('mismatchPercent').textContent = `${summary.mismatchPercent || 0}%`;
+    document.getElementById('missingCounts').textContent = `${summary.missing_master || 0} / ${summary.missing_rovan || 0}`;
+  }
+
+  function renderCourseList(perCourse){
+    const el = document.getElementById('courseSummary'); el.innerHTML = '';
+    const arr = Object.keys(perCourse).map(k => ({course:k, ...perCourse[k]}))
+      .filter(x => x.total > 0)
+      .sort((a,b)=> b.mismatches - a.mismatches)
+      .slice(0,50);
+    arr.forEach(c => {
+      const pct = c.total ? Math.round((c.mismatches / c.total)*10000)/100 : 0;
+      const div = document.createElement('div');
+      div.className = 'mb-2';
+      div.innerHTML = `<strong>${c.course}</strong> <div class="small-muted">Mismatches: ${c.mismatches} • MissingM: ${c.missing_master} • MissingR: ${c.missing_rovan} • ${pct}%</div>`;
+      el.appendChild(div);
+    });
+    return arr;
+  }
+
+  function renderChart(perCourse){
+    const arr = Object.keys(perCourse).map(k => ({course:k, ...perCourse[k]}))
+      .filter(x=>x.total>0)
+      .map(x => ({course:x.course, pct: x.total? Math.round((x.mismatches/x.total)*10000)/100 : 0, total:x.total}))
+      .sort((a,b)=> b.pct - a.pct)
+      .slice(0,12);
+    const labels = arr.map(x=>x.course); const data = arr.map(x=>x.pct);
+    const ctx = document.getElementById('courseChart').getContext('2d');
+    if(courseChart) courseChart.destroy();
+    courseChart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels, datasets:[{label:'Mismatch %', data, backgroundColor:'rgba(11,99,255,0.7)'}] },
+      options:{ responsive:true, scales:{y:{beginAtZero:true, max:100}} }
+    });
+  }
+
+  function populateTable(rows){
+    if($.fn.dataTable.isDataTable('#reportTable')) {
+      $('#reportTable').DataTable().clear().destroy();
+      $('#reportTable tbody').innerHTML = '';
+    }
+    const tbody = document.querySelector('#reportTable tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      let cls = '';
+      if(r.Status === 'Match') cls = 'status-Match';
+      else if(r.Status === 'Mismatch') cls = 'status-Mismatch';
+      else if(r.Status === 'Missing in Master') cls = 'status-MissingMaster';
+      else if(r.Status === 'Missing in Rovan') cls = 'status-MissingRovan';
+      tr.className = cls;
+      tr.innerHTML = `<td>${r.Register}</td><td>${r.Course}</td><td>${r.MasterMark}</td><td>${r.RovanMark}</td><td>${r.Status}</td>`;
+      tbody.appendChild(tr);
+    });
+    dataTable = $('#reportTable').DataTable({ pageLength:25, lengthMenu:[10,25,50,100] });
+  }
+
+  /* ---------------------- Events ---------------------- */
+  document.getElementById('compareBtn').onclick = async () => {
+    const masterFile = document.getElementById('masterFile').files[0];
+    const rovanFile = document.getElementById('rovanFile').files[0];
+    if(!masterFile || !rovanFile){ alert('Please select both Master and Rovan files.'); return; }
+    try {
+      // parse
+      const [mArr, rArr] = await Promise.all([parseSheetToArray(masterFile), parseSheetToArray(rovanFile)]);
+      const mDF = arrayToDF(mArr), rDF = arrayToDF(rArr);
+
+      // detect orientation but allow force switch
+      const forced = document.getElementById('forceTransposed').checked;
+      let mOrient = forced ? 'columns' : detectOrientation(mDF);
+      let rOrient = forced ? 'columns' : detectOrientation(rDF);
+      document.getElementById('autoDetectText').textContent = `Master:${mOrient.toUpperCase()} • Rovan:${rOrient.toUpperCase()}`;
+
+      const mMatrix = dfToMatrix(mDF, mOrient);
+      const rMatrix = dfToMatrix(rDF, rOrient);
+
+      const result = compareMatrices(mMatrix, rMatrix);
+      lastResult = { result, mMatrix, rMatrix, mOrient, rOrient };
+
+      renderStats(result.summary);
+      renderCourseList(result.perCourse);
+      renderChart(result.perCourse);
+      populateTable(result.rows);
+
+      // scroll to results
+      document.querySelector('#reportTable').scrollIntoView({behavior:'smooth'});
+    } catch(err){
+      console.error(err);
+      alert('Error reading files. Please verify the Excel files are valid (.xlsx/.xls/.csv).');
+    }
+  };
+
+  document.getElementById('resetBtn').onclick = () => {
+    document.getElementById('masterFile').value = '';
+    document.getElementById('rovanFile').value = '';
+    if($.fn.dataTable.isDataTable('#reportTable')) $('#reportTable').DataTable().clear().destroy();
+    document.querySelector('#reportTable tbody').innerHTML = '';
+    if(courseChart) courseChart.destroy();
+    lastResult = null;
+    document.getElementById('totalCells').textContent = '0';
+    document.getElementById('matches').textContent = '0';
+    document.getElementById('mismatches').textContent = '0';
+    document.getElementById('matchPercent').textContent = '0%';
+    document.getElementById('mismatchPercent').textContent = '0%';
+    document.getElementById('missingCounts').textContent = '0 / 0';
+    document.getElementById('autoDetectText').textContent = 'Auto-detect';
+    document.getElementById('forceTransposed').checked = false;
+  };
+
+  document.getElementById('downloadCSV').onclick = () => {
+    if(!lastResult || !lastResult.result.rows.length){ alert('No report to download.'); return; }
+    const csv = objectToCSV(lastResult.result.rows, ['Register','Course','MasterMark','RovanMark','Status']);
+    downloadBlob(csv, 'compare_report.csv', 'text/csv;charset=utf-8;');
+  };
+
+  document.getElementById('downloadXlsx').onclick = () => {
+    if(!lastResult || !lastResult.result.rows.length){ alert('No report to download.'); return; }
+    const ws = XLSX.utils.json_to_sheet(lastResult.result.rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    downloadBlob(wbout, 'compare_report.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
+  </script>
 </body>
 </html>
