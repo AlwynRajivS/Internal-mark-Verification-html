@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Internal - Marks Compare</title>
+  <title>Internal - Marks Compare (Pro)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -10,14 +10,8 @@
   <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet"/>
   <style>
     :root{
-      --brand:#0b63ff;
-      --bg:#f7fbff;
-      --muted:#6b7280;
-      --card:#ffffff;
-      --success:#1aa06a;
-      --danger:#e03a3a;
-      --warn:#f59e0b;
-      --info:#0ea5e9;
+      --brand:#0b63ff; --bg:#f7fbff; --muted:#6b7280; --card:#ffffff;
+      --success:#1aa06a; --danger:#e03a3a; --warn:#f59e0b; --info:#0ea5e9;
     }
     body { background:var(--bg); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; color:#06314a; }
     .container{max-width:1200px}
@@ -35,6 +29,8 @@
     .hint { font-size:0.86rem; color:var(--muted); }
     footer { margin-top:20px; color:var(--muted); font-size:0.85rem; text-align:center; }
     .select-reg { max-width:320px; }
+    .missing-panel { max-height:220px; overflow:auto; border-left:4px solid #eee; padding-left:12px; }
+    .mapping-table td, .mapping-table th { font-size:0.9rem; }
     @media (max-width:768px){ .card-block { padding:12px; } }
   </style>
 </head>
@@ -42,23 +38,21 @@
   <div class="container py-4">
     <header class="d-flex justify-content-between align-items-start">
       <div>
-        <div class="brand">Internal - Marks Compare </div>
-        <div class="small-muted">First column = RegNo, other columns = course codes (order may differ)</div>
+        <div class="brand">Internal - Marks Compare (Pro)</div>
+        <div class="small-muted">RegNo column (first column) & robust fuzzy course mapping</div>
       </div>
-      <div class="text-end small-muted">
-        
-      </div>
+      <div class="text-end small-muted">Client-side only • Works with shuffled rows/columns</div>
     </header>
 
     <!-- Upload area -->
     <section class="card-block mb-4">
-      <div class="row g-3 align-items-center">
+      <div class="row g-3 align-items-start">
         <div class="col-lg-7">
           <div class="row g-2">
             <div class="col-md-6">
               <label class="file-label">Master File (Dean Office)</label>
               <input id="masterFile" class="form-control" type="file" accept=".xlsx,.xls,.csv" />
-              <div class="hint">Upload Master Excel. App will try to detect RegNo column automatically.</div>
+              <div class="hint">Upload Master Excel. App auto-detects RegNo column; you can change it.</div>
             </div>
             <div class="col-md-6">
               <label class="file-label">Rovan File</label>
@@ -71,7 +65,7 @@
             <div class="col-md-6">
               <label class="file-label">Detected RegNo Column (Master)</label>
               <select id="masterRegCol" class="form-select select-reg"><option value="">— upload file to detect —</option></select>
-              <div class="hint">If detected column is wrong, choose the correct column from this dropdown.</div>
+              <div class="hint">If wrong, choose the actual Register No column here.</div>
             </div>
             <div class="col-md-6">
               <label class="file-label">Detected RegNo Column (Rovan)</label>
@@ -81,7 +75,7 @@
         </div>
 
         <div class="col-lg-5 text-lg-end">
-          <div class="top-actions">
+          <div class="top-actions mb-2">
             <button id="compareBtn" class="btn btn-primary">Compare Now</button>
             <button id="resetBtn" class="btn btn-outline-secondary">Reset</button>
           </div>
@@ -92,58 +86,78 @@
           </div>
 
           <div class="mt-2 hint">
-            Orientation detection: <strong id="orientInfo">Auto</strong>
+            Orientation: <strong id="orientInfo">Auto</strong>
             <div class="form-check form-switch mt-1">
               <input class="form-check-input" type="checkbox" id="forceTransposed">
               <label class="form-check-label small-muted" for="forceTransposed">Force: RegNo are columns (transposed)</label>
             </div>
           </div>
-
         </div>
       </div>
     </section>
 
-    <!-- Stats -->
+    <!-- Stats + missing columns panel -->
     <section class="row g-3 mb-4">
-      <div class="col-sm-6 col-md-3">
-        <div class="card-block stat">
-          <div class="small-muted">Total Compared Cells</div>
-          <div class="value" id="totalCells">0</div>
-          <div class="small-muted">Non-empty marks compared</div>
+      <div class="col-md-9">
+        <div class="row g-3">
+          <div class="col-sm-6 col-md-3">
+            <div class="card-block stat">
+              <div class="small-muted">Total Compared Cells</div>
+              <div class="value" id="totalCells">0</div>
+              <div class="small-muted">Non-empty marks compared</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="card-block stat">
+              <div class="small-muted">Matches</div>
+              <div class="value text-success" id="matches">0</div>
+              <div class="small-muted" id="matchPercent">0%</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="card-block stat">
+              <div class="small-muted">Mismatches</div>
+              <div class="value text-danger" id="mismatches">0</div>
+              <div class="small-muted" id="mismatchPercent">0%</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="card-block stat">
+              <div class="small-muted">Missing (Master / Rovan)</div>
+              <div class="value" id="missingCounts">0 / 0</div>
+              <div class="small-muted">Cells missing in files</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="col-sm-6 col-md-3">
-        <div class="card-block stat">
-          <div class="small-muted">Matches</div>
-          <div class="value text-success" id="matches">0</div>
-          <div class="small-muted" id="matchPercent">0%</div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-md-3">
-        <div class="card-block stat">
-          <div class="small-muted">Mismatches</div>
-          <div class="value text-danger" id="mismatches">0</div>
-          <div class="small-muted" id="mismatchPercent">0%</div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-md-3">
-        <div class="card-block stat">
-          <div class="small-muted">Missing (Master / Rovan)</div>
-          <div class="value" id="missingCounts">0 / 0</div>
-          <div class="small-muted">Cells missing in files</div>
+
+      <div class="col-md-3">
+        <div class="card-block">
+          <h6 class="mb-2">Missing Columns</h6>
+          <div class="missing-panel">
+            <div><strong>In Master only:</strong> <span id="masterOnlyCount">0</span></div>
+            <ul id="masterOnlyList" class="mb-2"></ul>
+            <div><strong>In Rovan only:</strong> <span id="rovanOnlyCount">0</span></div>
+            <ul id="rovanOnlyList"></ul>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Chart + Course list -->
+    <!-- Chart + Course mapping table -->
     <section class="card-block mb-4">
-      <div class="row align-items-center">
+      <div class="row align-items-start">
         <div class="col-lg-8 mb-3 mb-lg-0">
           <canvas id="courseChart" height="120"></canvas>
         </div>
         <div class="col-lg-4">
-          <h6 class="mb-2">Course Summary (top issues)</h6>
-          <div id="courseSummary" style="max-height:220px; overflow:auto;"></div>
+          <h6 class="mb-2">Course Mapping (normalized → originals)</h6>
+          <div style="max-height:260px; overflow:auto;">
+            <table class="table table-sm mapping-table">
+              <thead><tr><th>Normalized</th><th>Master Originals</th><th>Rovan Originals</th></tr></thead>
+              <tbody id="mappingBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -161,13 +175,7 @@
       <div class="table-responsive">
         <table id="reportTable" class="display cell-border stripe" style="width:100%">
           <thead>
-            <tr>
-              <th>Register No</th>
-              <th>Course</th>
-              <th>Master Mark</th>
-              <th>Rovan Mark</th>
-              <th>Status</th>
-            </tr>
+            <tr><th>Register No</th><th>Course (normalized)</th><th>Master Mark</th><th>Rovan Mark</th><th>Status</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -175,7 +183,7 @@
       <div class="mt-3 small-muted">Tip: Use the search box to find a register or course quickly.</div>
     </section>
 
-   
+    <footer>Built with SheetJS • Chart.js • DataTables • Client-side only</footer>
   </div>
 
   <!-- Libraries -->
@@ -185,9 +193,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <script>
-  /*******************************
-   * Utilities
-   *******************************/
+  /***********************
+   Utilities
+  ***********************/
   const readFileAsArrayBuffer = (file) => new Promise((res, rej) => {
     const fr = new FileReader();
     fr.onload = e => res(e.target.result);
@@ -198,16 +206,33 @@
   function downloadBlob(data, filename, mime){
     const blob = new Blob([data], {type: mime});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
+    const a = document.createElement('a'); a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
 
+  // Basic fuzzy normalization (Option 1)
+  function normalizeCourseHeader(h){
+    if(h === null || h === undefined) return "";
+    let s = String(h).toUpperCase().trim();
+    // remove common words/labels
+    s = s.replace(/\b(THEORY|PRACTICAL|PRACT|LAB|INTERNALS|INTERNAL|IA|ASSIGNMENT|TW)\b/gi, '');
+    // remove parentheses content
+    s = s.replace(/\(.*?\)/g, '');
+    // remove non-alphanumeric characters except keep letters+digits
+    s = s.replace(/[^A-Z0-9]/g, '');
+    // collapse multiple spaces (not needed after removal) and trim
+    s = s.trim();
+    // If header contains both letters and digits, keep as-is (e.g., CS3391)
+    // If not, return full cleaned text
+    return s;
+  }
+
   function normalizeString(v){
     if(v === null || v === undefined) return "";
-    return String(v).trim().toUpperCase();
+    return String(v).toString().trim().toUpperCase();
   }
+
   function isRegisterLike(s){
     if(!s) return false;
     return /\d/.test(s) && s.trim().length >= 3;
@@ -220,9 +245,9 @@
     return [h, ...lines].join("\r\n");
   }
 
-  /*******************************
-   * Template Download
-   *******************************/
+  /***********************
+   Templates
+  ***********************/
   document.getElementById('downloadMasterTpl').onclick = () => {
     const arr = [
       ["RegNo","MA3351","PH3251","CS3391"],
@@ -231,12 +256,10 @@
       ["2123003",20,17,18]
     ];
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(arr);
-    XLSX.utils.book_append_sheet(wb, ws, "Master");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(arr), "Master");
     const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     downloadBlob(wbout, "Master_Template.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   };
-
   document.getElementById('downloadRovanTpl').onclick = () => {
     const arr = [
       ["RegNo","CS3391","MA3351","PH3251"],
@@ -245,15 +268,14 @@
       ["2123003",18,20,17]
     ];
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(arr);
-    XLSX.utils.book_append_sheet(wb, ws, "Rovan");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(arr), "Rovan");
     const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     downloadBlob(wbout, "Rovan_Template.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   };
 
-  /*******************************
-   * Parsing helpers
-   *******************************/
+  /***********************
+   Parsing helpers
+  ***********************/
   async function parseSheetToArray(file){
     const ab = await readFileAsArrayBuffer(file);
     const wb = XLSX.read(ab, {type:'array'});
@@ -281,9 +303,7 @@
   }
 
   function detectRegColCandidates(df){
-    // returns list of header names that are candidate RegNo columns (based on name or content)
     const candidates = new Set();
-    // header name match
     df.header.forEach(h => {
       if(!h) return;
       const x = String(h).toUpperCase();
@@ -291,19 +311,16 @@
         candidates.add(h);
       }
     });
-    // content heuristic: column with many register-like values
     df.header.forEach(h => {
       const vals = df.rows.map(r => normalizeString(r[h]));
       const regCount = vals.filter(v => isRegisterLike(v)).length;
       if(regCount >= Math.max(3, Math.floor(0.35*vals.length))) candidates.add(h);
     });
-    // fallback: first column
     if(candidates.size === 0 && df.header.length>0) candidates.add(df.header[0]);
     return Array.from(candidates);
   }
 
   function detectOrientation(df){
-    // if first column contains many register-like -> 'rows' (RegNo in first col)
     const firstColVals = df.rows.map(r => normalizeString(r[df.header[0]]));
     const colCount = firstColVals.length;
     const regsInCol = firstColVals.filter(v => isRegisterLike(v)).length;
@@ -313,10 +330,18 @@
     return 'rows';
   }
 
+  /***********************
+   Convert DF -> matrix with normalized course keys
+  ***********************/
   function dfToMatrix(df, regColName, orientation){
-    // Template C expects first column RegNo, but we support any regColName chosen
+    // normalize headers & build mapping original -> normalized
+    const normHeaders = df.header.map(h => normalizeCourseHeader(h));
+    const origToNorm = {}; // original header -> normalized
+    df.header.forEach((h, i) => { origToNorm[h] = normHeaders[i] || ""; });
+
     const regs = new Set(), courses = new Set();
-    const matrix = {};
+    const matrix = {}; // matrix[reg][normalizedCourse] = original value (string)
+
     if(orientation === 'rows'){
       const regCol = regColName || df.header[0];
       df.rows.forEach(r => {
@@ -326,42 +351,69 @@
         matrix[reg] = matrix[reg] || {};
         df.header.forEach(h => {
           if(h === regCol) return;
-          const course = normalizeString(h);
-          if(!course) return;
-          courses.add(course);
-          matrix[reg][course] = r[h] === null ? "" : String(r[h]).trim();
+          const norm = origToNorm[h];
+          if(!norm) return;
+          courses.add(norm);
+          const val = r[h] === null ? "" : String(r[h]).trim();
+          matrix[reg][norm] = val;
         });
       });
     } else {
-      // transposed: header row contains regs; first column contains course names
+      // transposed: header list contains register numbers (from second column onwards)
       const regHeaders = df.header.slice(1).map(h => normalizeString(h));
       df.rows.forEach(r => {
-        const course = normalizeString(r[df.header[0]]);
-        if(!course) return;
-        courses.add(course);
+        const courseOrig = r[df.header[0]];
+        const normCourse = normalizeCourseHeader(courseOrig);
+        if(!normCourse) return;
+        courses.add(normCourse);
         for(let i=1;i<df.header.length;i++){
           const reg = regHeaders[i-1];
           if(!reg) continue;
           regs.add(reg);
           matrix[reg] = matrix[reg] || {};
-          matrix[reg][course] = r[df.header[i]] === null ? "" : String(r[df.header[i]]).trim();
+          const val = r[df.header[i]] === null ? "" : String(r[df.header[i]]).trim();
+          matrix[reg][normCourse] = val;
         }
       });
     }
-    return {regs:Array.from(regs).sort(), courses:Array.from(courses).sort(), matrix};
+
+    // Return also mapping of normalized -> originals for displaying mapping table
+    const normToOriginals = {}; // norm -> set of originals
+    df.header.forEach(h => {
+      const n = origToNorm[h] || "";
+      if(!n) return;
+      normToOriginals[n] = normToOriginals[n] || new Set();
+      normToOriginals[n].add(h);
+    });
+
+    return {
+      regs: Array.from(regs).sort(),
+      courses: Array.from(courses).sort(),
+      matrix,
+      normToOriginals
+    };
   }
 
+  /***********************
+   Compare master & rovan matrices
+  ***********************/
   function compareMatrices(master, rovan){
+    // union of normalized courses
     const regs = Array.from(new Set([...master.regs, ...rovan.regs])).sort();
     const courses = Array.from(new Set([...master.courses, ...rovan.courses])).sort();
+
     const rows = [];
     const summary = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0};
     const perCourse = {};
     courses.forEach(c => perCourse[c] = {total:0, matches:0, mismatches:0, missing_master:0, missing_rovan:0});
+
     regs.forEach(reg => {
       courses.forEach(course => {
-        const m = (master.matrix[reg] && master.matrix[reg][course]) ? normalizeString(master.matrix[reg][course]) : "";
-        const r = (rovan.matrix[reg] && rovan.matrix[reg][course]) ? normalizeString(rovan.matrix[reg][course]) : "";
+        const mRaw = (master.matrix[reg] && master.matrix[reg][course]) ? master.matrix[reg][course] : "";
+        const rRaw = (rovan.matrix[reg] && rovan.matrix[reg][course]) ? rovan.matrix[reg][course] : "";
+        const m = normalizeString(mRaw);
+        const r = normalizeString(rRaw);
+        // ignore both empty
         if(m === "" && r === "") return;
         summary.total++; perCourse[course].total++;
         let status = "";
@@ -369,61 +421,51 @@
         else if(r === "" && m !== "") { status = "Missing in Rovan"; summary.missing_rovan++; perCourse[course].missing_rovan++; }
         else if(m === r) { status = "Match"; summary.matches++; perCourse[course].matches++; }
         else { status = "Mismatch"; summary.mismatches++; perCourse[course].mismatches++; }
-        rows.push({Register:reg, Course:course, MasterMark:m, RovanMark:r, Status:status});
+        rows.push({Register:reg, Course:course, MasterMark:mRaw, RovanMark:rRaw, Status:status});
       });
     });
+
     summary.matchPercent = summary.total ? Math.round((summary.matches/summary.total)*10000)/100 : 0;
     summary.mismatchPercent = summary.total ? Math.round((summary.mismatches/summary.total)*10000)/100 : 0;
     return {rows, summary, perCourse};
   }
 
-  /*******************************
-   * UI & Events
-   *******************************/
+  /***********************
+   UI & Events
+  ***********************/
   let masterDF = null, rovanDF = null;
+  let masterParsed = null, rovanParsed = null;
   let lastResult = null;
   let dataTable = null;
   let courseChart = null;
 
   function fillRegColSelect(df, selectEl){
     selectEl.innerHTML = '';
-    const header = df.header;
     const candidates = detectRegColCandidates(df);
-    // add all headers as options, mark candidates first
-    const ordered = [...new Set([...candidates, ...header])];
+    const ordered = [...new Set([...candidates, ...df.header])];
     ordered.forEach(h => {
-      const opt = document.createElement('option');
-      opt.value = h; opt.textContent = h || '(blank)';
+      const opt = document.createElement('option'); opt.value = h; opt.textContent = h || '(blank)';
       selectEl.appendChild(opt);
     });
-    // set default to first candidate if present
     if(candidates.length>0) selectEl.value = candidates[0];
   }
 
   document.getElementById('masterFile').addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if(!f) return;
+    const f = e.target.files[0]; if(!f) return;
     try {
       const arr = await parseSheetToArray(f);
       masterDF = arrayToDF(arr);
       fillRegColSelect(masterDF, document.getElementById('masterRegCol'));
-    } catch(err){
-      alert('Cannot read Master file. Ensure it is a valid .xlsx/.xls/.csv file.');
-      console.error(err);
-    }
+    } catch(err){ alert('Cannot read Master file.'); console.error(err); }
   });
 
   document.getElementById('rovanFile').addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if(!f) return;
+    const f = e.target.files[0]; if(!f) return;
     try {
       const arr = await parseSheetToArray(f);
       rovanDF = arrayToDF(arr);
       fillRegColSelect(rovanDF, document.getElementById('rovanRegCol'));
-    } catch(err){
-      alert('Cannot read Rovan file. Ensure it is a valid .xlsx/.xls/.csv file.');
-      console.error(err);
-    }
+    } catch(err){ alert('Cannot read Rovan file.'); console.error(err); }
   });
 
   function renderStats(summary){
@@ -433,6 +475,37 @@
     document.getElementById('matchPercent').textContent = `${summary.matchPercent || 0}%`;
     document.getElementById('mismatchPercent').textContent = `${summary.mismatchPercent || 0}%`;
     document.getElementById('missingCounts').textContent = `${summary.missing_master || 0} / ${summary.missing_rovan || 0}`;
+  }
+
+  function renderMappingTable(masterNormMap, rovanNormMap){
+    const allNorms = Array.from(new Set([...Object.keys(masterNormMap), ...Object.keys(rovanNormMap)])).sort();
+    const tbody = document.getElementById('mappingBody'); tbody.innerHTML = '';
+    allNorms.forEach(n => {
+      const mArr = masterNormMap[n] ? Array.from(masterNormMap[n]).join(", ") : "";
+      const rArr = rovanNormMap[n] ? Array.from(rovanNormMap[n]).join(", ") : "";
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><strong>${n}</strong></td><td>${mArr}</td><td>${rArr}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderMissingLists(masterOnly, rovanOnly, masterMap, rovanMap){
+    const masterList = document.getElementById('masterOnlyList'); masterList.innerHTML = '';
+    const rovanList = document.getElementById('rovanOnlyList'); rovanList.innerHTML = '';
+    masterOnly.forEach(n => {
+      const li = document.createElement('li');
+      const originals = masterMap[n] ? Array.from(masterMap[n]).join(", ") : '';
+      li.innerHTML = `${n} <small class="small-muted">(${originals})</small>`;
+      masterList.appendChild(li);
+    });
+    rovanOnly.forEach(n => {
+      const li = document.createElement('li');
+      const originals = rovanMap[n] ? Array.from(rovanMap[n]).join(", ") : '';
+      li.innerHTML = `${n} <small class="small-muted">(${originals})</small>`;
+      rovanList.appendChild(li);
+    });
+    document.getElementById('masterOnlyCount').textContent = masterOnly.length;
+    document.getElementById('rovanOnlyCount').textContent = rovanOnly.length;
   }
 
   function renderCourseList(perCourse){
@@ -445,7 +518,7 @@
       const pct = c.total ? Math.round((c.mismatches / c.total)*10000)/100 : 0;
       const div = document.createElement('div');
       div.className = 'mb-2';
-      div.innerHTML = `<strong>${c.course}</strong> <div class="small-muted">Mismatches: ${c.mismatches} • MissingM: ${c.missing_master} • MissingR: ${c.missing_rovan} • ${pct}%</div>`;
+      div.innerHTML = `<strong>${c.course}</strong> <div class="small-muted">Mismatches: ${c.mismatches} • MissM: ${c.missing_master} • MissR: ${c.missing_rovan} • ${pct}%</div>`;
       el.appendChild(div);
     });
     return arr;
@@ -461,8 +534,7 @@
     const ctx = document.getElementById('courseChart').getContext('2d');
     if(courseChart) courseChart.destroy();
     courseChart = new Chart(ctx, {
-      type:'bar',
-      data:{ labels, datasets:[{label:'Mismatch %', data, backgroundColor:'rgba(11,99,255,0.8)'}] },
+      type:'bar', data:{ labels, datasets:[{label:'Mismatch %', data, backgroundColor:'rgba(11,99,255,0.8)'}] },
       options:{ responsive:true, scales:{y:{beginAtZero:true, max:100}} }
     });
   }
@@ -488,14 +560,11 @@
   }
 
   document.getElementById('compareBtn').onclick = async () => {
-    if(!masterDF || !rovanDF){
-      alert('Please upload both Master and Rovan files (then choose RegNo columns if needed).');
-      return;
-    }
+    if(!masterDF || !rovanDF){ alert('Please upload both Master and Rovan files.'); return; }
     try {
       const forced = document.getElementById('forceTransposed').checked;
-      let mOrient = forced ? 'columns' : detectOrientation(masterDF);
-      let rOrient = forced ? 'columns' : detectOrientation(rovanDF);
+      const mOrient = forced ? 'columns' : detectOrientation(masterDF);
+      const rOrient = forced ? 'columns' : detectOrientation(rovanDF);
       document.getElementById('orientInfo').textContent = `Master:${mOrient.toUpperCase()} • Rovan:${rOrient.toUpperCase()}`;
 
       const masterRegCol = document.getElementById('masterRegCol').value || masterDF.header[0];
@@ -504,10 +573,25 @@
       const mMatrix = dfToMatrix(masterDF, masterRegCol, mOrient);
       const rMatrix = dfToMatrix(rovanDF, rovanRegCol, rOrient);
 
+      // Build normalized-course -> originals mapping
+      const masterNormMap = {};
+      for(const k in mMatrix.normToOriginals || {}) masterNormMap[k] = new Set(mMatrix.normToOriginals[k]);
+      const rovanNormMap = {};
+      for(const k in rMatrix.normToOriginals || {}) rovanNormMap[k] = new Set(rMatrix.normToOriginals[k]);
+
+      // find master-only and rovan-only normalized courses
+      const allNorms = Array.from(new Set([...Object.keys(masterNormMap), ...Object.keys(rovanNormMap)])).sort();
+      const masterOnly = allNorms.filter(n => !(n in rovanNormMap));
+      const rovanOnly = allNorms.filter(n => !(n in masterNormMap));
+
+      // compare
       const result = compareMatrices(mMatrix, rMatrix);
       lastResult = { result, mMatrix, rMatrix, mOrient, rOrient, masterRegCol, rovanRegCol };
 
+      // render UI
       renderStats(result.summary);
+      renderMappingTable(masterNormMap, rovanNormMap);
+      renderMissingLists(masterOnly, rovanOnly, masterNormMap, rovanNormMap);
       renderCourseList(result.perCourse);
       renderChart(result.perCourse);
       populateTable(result.rows);
@@ -535,6 +619,11 @@
     document.getElementById('mismatchPercent').textContent = '0%';
     document.getElementById('missingCounts').textContent = '0 / 0';
     document.getElementById('orientInfo').textContent = 'Auto';
+    document.getElementById('mappingBody').innerHTML = '';
+    document.getElementById('masterOnlyList').innerHTML = '';
+    document.getElementById('rovanOnlyList').innerHTML = '';
+    document.getElementById('masterOnlyCount').textContent = '0';
+    document.getElementById('rovanOnlyCount').textContent = '0';
   };
 
   document.getElementById('downloadCSV').onclick = () => {
